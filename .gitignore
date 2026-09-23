@@ -1,0 +1,21 @@
+# local machine config
+*.conf
+
+# Python
+__pycache__/
+*.py[cod]
+
+# C programs (source and compiled output)
+*.c
+*.o
+*.obj
+*.out
+*.exe
+*.a
+*.so
+shortcut-builder/open-projects
+
+antigravity-ide/*.sh
+local/*.sh
+cursor/*.sh
+
