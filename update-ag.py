@@ -1746,6 +1746,15 @@ def install_icon(
         == ".svg"
     ):
 
+        if icon.name == "antigravity.svg":
+            content = icon.read_text(encoding="utf-8")
+            match = re.search(r'data:image/png;base64,([^"]+)', content)
+            if match:
+                import base64
+                destination.write_bytes(base64.b64decode(match.group(1)))
+                return destination
+
+
         # Prefer ImageMagick if available.
         if command_exists(
             "convert"
