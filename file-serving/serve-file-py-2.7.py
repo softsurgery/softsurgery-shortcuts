@@ -1,8 +1,3 @@
-#!/bin/bash
-# Builder script to generate a secure serve-file.py
-# Features added: SSL Encryption, Basic Authentication, and File Uploads
-
-cat > serve-file.py <<'EOF'
 #!/usr/bin/env python2
 
 import os
@@ -440,6 +435,3 @@ except (KeyboardInterrupt, EOFError):
 
 finally:
     cleanup()
-EOF
-
-chmod +x serve-file.py
