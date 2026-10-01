@@ -10,7 +10,7 @@ This repository contains various utility scripts and shortcuts. Below is an inde
 
 ## File Serving
 
-Fast, secure, and self-contained HTTP(S) file serving tools with web UI, Basic Authentication, download, streaming upload, and automatic firewall port configuration via `firewall-cmd`.
+Fast, secure, and self-contained HTTP(S) file serving tools with web UI, Basic Authentication, download, streaming upload, and automatic firewall port configuration (supporting Debian/Ubuntu distros via `ufw`, CentOS/RHEL distros via `firewall-cmd`, and `iptables`).
 
 * **`file-serving/serve-file-py-3.py`**:
   * Standalone **Python 3** secure file server.

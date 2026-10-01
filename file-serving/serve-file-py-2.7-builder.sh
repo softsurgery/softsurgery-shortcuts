@@ -322,30 +322,83 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         sys.stdout.flush()
 
 
+firewall_backend = None
+
+
+def find_firewall_tool(name):
+    path_dirs = os.environ.get("PATH", "").split(os.pathsep)
+    for extra in ["/usr/sbin", "/sbin", "/usr/local/sbin"]:
+        if extra not in path_dirs:
+            path_dirs.append(extra)
+    for d in path_dirs:
+        candidate = os.path.join(d, name)
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return None
+
+
+def detect_firewall():
+    # Detect Debian-based distros vs CentOS/RHEL
+    is_debian = os.path.exists("/etc/debian_version")
+    if is_debian:
+        order = ["ufw", "iptables", "firewall-cmd"]
+    else:
+        order = ["firewall-cmd", "ufw", "iptables"]
+
+    for name in order:
+        tool = find_firewall_tool(name)
+        if tool:
+            return (tool, name)
+    return None
+
+
 def firewall_add(port):
+    global firewall_backend
+    backend = detect_firewall()
+    if not backend:
+        print("Firewall: no supported firewall tool found (ufw, firewall-cmd, iptables)")
+        sys.stdout.flush()
+        return False
+
+    tool, name = backend
     try:
-        subprocess.check_call([
-            "firewall-cmd",
-            "--add-port=%d/tcp" % port
-        ])
-        print("Firewall: allowed TCP port %d" % port)
+        if name == "ufw":
+            subprocess.check_call([tool, "allow", "%d/tcp" % port])
+        elif name == "firewall-cmd":
+            subprocess.check_call([tool, "--add-port=%d/tcp" % port])
+        elif name == "iptables":
+            subprocess.check_call([tool, "-A", "INPUT", "-p", "tcp", "--dport", str(port), "-j", "ACCEPT"])
+
+        firewall_backend = backend
+        print("Firewall: allowed TCP port %d (%s)" % (port, name))
         sys.stdout.flush()
         return True
     except Exception as e:
-        print("Firewall: could not open port: %s" % e)
+        print("Firewall: could not open port (%s): %s" % (name, e))
+        sys.stdout.flush()
         return False
 
 
 def firewall_remove(port):
+    global firewall_backend
+    backend = firewall_backend or detect_firewall()
+    if not backend:
+        return
+
+    tool, name = backend
     try:
-        subprocess.call([
-            "firewall-cmd",
-            "--remove-port=%d/tcp" % port
-        ])
-        print("Firewall: removed TCP port %d" % port)
+        if name == "ufw":
+            subprocess.call([tool, "delete", "allow", "%d/tcp" % port])
+        elif name == "firewall-cmd":
+            subprocess.call([tool, "--remove-port=%d/tcp" % port])
+        elif name == "iptables":
+            subprocess.call([tool, "-D", "INPUT", "-p", "tcp", "--dport", str(port), "-j", "ACCEPT"])
+
+        print("Firewall: removed TCP port %d (%s)" % (port, name))
         sys.stdout.flush()
     except Exception as e:
-        print("Firewall: could not remove port: %s" % e)
+        print("Firewall: could not remove port (%s): %s" % (name, e))
+        sys.stdout.flush()
 
 
 server = None
